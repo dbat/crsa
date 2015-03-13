@@ -1,320 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>RSA-test 23</title>
-<style>            
-
-
-div { white-space: nowrap; }
-.bt2 { width:16px; height:20px; }
-</style>
-
-<script src=crsa.js></script>
-<script src=crsa_gen.js></script>
-<script src=crsa_enc.js></script>
-<script src=crsa_e24.js></script>
-<script src=crsa_e28.js></script>
-<!-- script src=crsa_e30.js></script -->
-<script src=crsa_b64.js></script>
-<!-- script src=dumper.js></script -->
+<title>RSA-test1 = OKEH!</title>
 <script>
-
-function modis(d, M, Log) {
-  var A = modInverseTable(d, M);
-  var i = A.length - 1;
-  var m = A[i].mod;
-  //m += M; m %= M; // sanitize; slow
-  if (m < 0) m += M;
-
-  var S = 'd: ' + d +' (mod ' + 'M: ' + M + ') = '+ m +'\n\n';
-  S = S + 'index' + '\t' + 'r' + '\t' + 'q' + '\t' + 'c' + '\n';
-
-  for (i=0; i<A.length; i++) {
-    //A[i].mod = -1;
-    S = S + (i) + '.\t' + A[i].base + '\t' + A[i].quot + '\t' + A[i].mod + '\n';
+function modInverse(d, M) {
+  // var d, M;
+  // M = 392; d = 27;
+  if (M==null) M=3000;
+  var A = M;  var b = d;  var q = 0;
+  //var remns = [d]; // 2)
+  var remns = [M]; // 1)
+  var quots = [0];
+  for (i = 1; i < 100; i++) {
+    r = parseInt(A % b);
+    if (r > 1) {
+      q = parseInt(A / b);
+      //remns[i] = r; quots[i] = q; // 2)
+      remns[i] = b; quots[i] = q; // 1)
+      A = b; b = r;
+    }
+    else {
+      if (r == 0) {
+          //remns[i] = r + ':ERR!' ; quots[i] = q;     // 2)
+          //remns[i+1] = 0; quots[i+1] = r + ':ERR!' ; //2)
+          remns[i] = b; quots[i] = q;                // 1)
+          remns[i+1] = r + ':ERR!' ; quots[i+1] = b; // 1)
+        }
+      else
+      {
+        //remns[i] = r; quots[i] = q;     // 2)
+        //remns[i+1] = 0; quots[i+1] = r; //2)
+        remns[i] = b; quots[i] = q;     // 1)
+        remns[i+1] = r; quots[i+1] = b; // 1)
+      }
+      break;
+    }
   }
-
-  //S = dump(A, 3);
-  //S = JSON.stringify(A);
-
-  S = '<pre><font size=+0>' + S + '</font></pre>';
-  putLog(Log, S);
+  // if (r != 1) return;
+  S1 = 'd: ' + d +', (mod ' + 'M: ' + M + ')\n\n';
+  S1 = S1 + 'step' + '\t' + 'r' + '\t' + 'q' + '\n';
+  for (i=0; i<remns.length; i++) {
+    S1 = S1 + (i+1) + '.\t' + remns[i] + '\t' + quots[i] + '\n';
+  }
+  //alert(S1);
+  S1 = '<pre><font size=+0>' + S1 + '</font></pre>';
+  dumpLog('log', S1);
 }
 
-// Number = parseInt(hexString, 16);
-// hexStr = yourNumber.toString(16);
-
-function modex(base, exp, mod, Log) {
-  var val = modExp(base, exp, mod);
-  var S = '';
-  S = S + '(' + base +' ^ ' + exp +') mod ' + mod +' = ' + val;
-  //S = S + ' (' + val.toString(16) + ')';
-  putLog(Log, S);
-}
-
-function modex2(base, exp, mod, Log) {
-  var val = modExp(base, exp, mod);
-  var S = '';
-  S = S + '(' + base +' ^ ' + exp +') mod ' + mod +' = ' + val;
-  //S = S + ' (' + val.toString(16) + ')';
-  putLog(Log, S);
-}
-
-function printPrimes(Log){
-  var BITS_MAX = 16;
-  if (!Primes.length) Primes = eraSieve(1 << BITS_MAX);
-  //S = dump(Primes);
-  putLog(Log, Primes.join(' '));
-}
-
-function genSel(idSel, idKey1, ckValid, Log) {
-  var e = gete(idSel);
-  var str = e.options[e.selectedIndex].text;
-  //var val = e.options[e.selectedIndex].value;
-  var bits = parseInt(str);
-  var str = getVal(idKey1);
-  var key1 = parseInt(str);
-  var valid_Only = gete(ckValid).checked;;
-  var A = genrKey1(key1, bits, valid_Only, (1 << 31) -1);
-  S = JSON.stringify(A);
-  putLog(Log, S);
-}
-
-function getk27(Log, p1, p2, e) {
-  var A = makeKey2(p1, p2, e);
-  S = JSON.stringify(A);
-  putLog(Log, S);
-}
-
-function pickA2(srcLog, dest1, name1, dest2, name2) {
-  var S = getLog(srcLog);
-  if (S == '' || S == '[data]') return;
-  try { var A = JSON.parse(S); }
-  catch(err) { return; }
-  document.getElementById(dest1).value = A[name1];
-  if (typeof dest2 !== 'undefined')
-    document.getElementById(dest2).value = A[name2];
-}
-
-function pickA1(srcLog, dest, name) { pickA2(srcLog, dest, name); }
-
-function gete(id)  { return document.getElementById(id); }
-function getVal(id)  { return gete(id).value; }
-function putVal(id, val)  { gete(id).value = val; }
-function getnVal(id) { return parseInt(getVal(id)); }
-function getLog(log) { return gete(log).innerHTML; }
-function putLog(log, S) { gete(log).innerHTML = S; }
-function addLog(log, S) { var e = gete(log); e.innerHTML += S; }
-
-function _entoSafe(EncryptedStr) {
-  var SafeStr = [], en = EncryptedStr;
-  for (var i = 0; i < en.length; i ++)
-    SafeStr[i] = en.charCodeAt(i) < 0x20 ? '.' : en[i];
-  return SafeStr.join('');
-}
-
-function _entoHexx(S) {
-  var E = [];
-  for (var i = 0; i < S.length; i ++)
-    E[i] = '0'.substr(0, S.charCodeAt(i) < 16) + S.charCodeAt(i).toString(16);
-  return '\\x' + E.join('\\x');
-}
-
-
-function doEncTest(idStr, idEnc) {
-  var S = getVal(idStr);
-  var R = _MyPKTest1_; 
-  var mod = R.pq;
-  var key1 = R.key1; 
-  //var E = encrypt24(key1, mod, S);
-  //var E = encrypt24_rev(key1, mod, S);
-  //var E = encrypt28_rev(key1, mod, S);
-  //var E = encrypt28(key1, mod, S);
-  //var E = encrypt28_rev(key1, mod, S);
-  var E = encrypt(key1, mod, S);
-//***dont-touch***
-//***dont-touch***
-
-  //var D = E;
-  //var D = Base64.unarmor(E);
-  //var D = _entoSafe(E);
-  //var D = Base64.encode(E);
-  //var D = _entoCharCodes(E);
-  var D = _entoHex(E);
-  //var D = _entoHexx(E);
-
-//***dont-touch***
-//***dont-touch***
-  putVal(idEnc, D);
-}
-
-function doDecTest(idStr, idEnc) {
-  var S = getVal(idEnc);
-  var R = _MyPKTest1_; 
-  var mod = R.pq;
-  var key2 = R.key2;
-//***dont-touch***
-//***dont-touch***
-
-  //var E = eval('\x27' + S + '\x27');
-  //var E = _charCodestoEn(S);
-  //var E = Base64.decode(S);
-  //var E = Base64.decode(S);
-  //var E = _charCodestoEn(S);
-  var E = _hextoEn(S);
-
-//***dont-touch***
-//***dont-touch***
-  var D = decrypt(key2, mod, E);
-  //var D = decrypt28(key2, mod, E);
-  //var D = decrypt28(key2, mod, E);
-  //var D = decrypt24_REV(key2, mod, E);
-  //var D = decrypt24(key2, mod, E);
-  putVal(idStr, D);
-}
-
-function StoA(S) {
-  var A = [];
-  for (var i = 0; i < S.length; i ++)
-    A[i] = S.charCodeAt(i);
-}
-
-function d2h(num, padchar, padlen, prefix, suffix) {
-  padchar = typeof padchar === 'string' && padchar.length > 0 ? padchar.charAt(0) : '0';
-  padlen = typeof padlen === 'numeric' ? parseInt(Math.abs(padlen) - 1) & 31 : 4 - 1;
-  prefix = typeof prefix === 'string' ? prefix : '';
-  suffix = typeof suffix === 'string' ? suffix : '';
-  var x = num.toString(16);
-  while (x.length <= padlen) x = pad + x;
-  return prefix + x + suffix;
-}
-
-var _MyPKTest1_ =
-//  32452867 *  15485867 =    502560782130689
-// 941083987 * 295075153 = 277690501449875011
-// 9999929 171541
-// 1^24 =   16777216
-// 1^28 =  268435456
-// 1^30 = 1073741824
-// 1^31 = 2147483648
-//{"prime1":7841, "prime2":3137, "pq":24597217,  "totient":24586240,  "key2":2851899,   "key1":19699}
-//{"prime1":18313,"prime2":2801, "pq":51294713,  "totient":51273600,  "key2":15418453,  "key1":8317}
-//ERR_NEGATIVE_PQ: {"prime1":37097,"prime2":62761,"pq":2328244817,"totient":2328144960,"key2":1827580669,"key1":29269,"ERRORS":"pq>MAX"}
-//ERR_NEGATIVE_PQ: {"prime1":44273,"prime2":57527,"pq":2546892871,"totient":2546791072,"key2":1476409953,"key1":19777,"ERRORS":"pq>MAXINT"}
-//ERR_OVERFLOW_PQ: {"prime1":47293,"prime2":60139,"pq":2844153727,"totient":2844046296,"key2":2327725837,"key1":22573,"ERRORS":"pq>OVERFLOW, key2>OVERFLOW"}
-//{"prime1":6469,"prime2":48541,"pq":314011729,"totient":313956720,"key2":212564701,"key1":171541,"size":28}
-{"prime1":47293,"prime2":60139,"pq":2844153727,"totient":2844046296,"key2":2327725837,"key1":22573,"ERRORS":"pq>OVERFLOW, key2>OVERFLOW"}
-//OK {"prime1":51461,"prime2":37061,"pq":1907196121,"totient":1907107600,"key2":772782109,"key1":63589}
-//OK {"prime1":36793,"prime2":48353,"pq":1779051929,"totient":1778966784,"key2":570492079, "key1":33871,"ERRORS":"pq>MAX"}
-//{"prime1":16061,"prime2":11299,"pq":181473239, "totient":181445880, "key2":128274947, "key1":31883,"ERRORS":"pq>MAX"}
-//{"prime1":5039, "prime2":42509,"pq":214202851, "totient":214155304, "key2":103068301, "key1":61613,"ERRORS":"pq>MAX"}
-//{"prime1":50111,"prime2":40177,"pq":2013309647,"totient":2013219360,"key2":715357133,"key1":197}
-;
+function dumpLog(id, S) { document.getElementById(id).innerHTML = S; }
+function getnVal(id) { val=document.getElementById(id).value; return parseInt(val); }
 
 </script>
 </head>
 <body>
 <div>
-<button onClick="putLog('Log1','');">Clear</button> |
-Modulus (m): <input id="Mod1" value="30000" size="8"> | Val (d):
-<input id="Val1" value="197"   type=text size="4"><button onClick="modis(getnVal('Val1'),  getnVal('Mod1'), 'Log1');">&nbsp;</button> |
-<input id="Val11" value="213"  type=text size="4"><button onClick="modis(getnVal('Val11'), getnVal('Mod1'), 'Log1');">&nbsp;</button> |
-<input id="Val12" value="221"  type=text size="4"><button onClick="modis(getnVal('Val12'), getnVal('Mod1'), 'Log1');">&nbsp;</button> |
-<input id="Val13" value="2211" type=text size="4"><button onClick="modis(getnVal('Val13'), getnVal('Mod1'), 'Log1');">&nbsp;</button> |
-<input id="Val14" value="2113" type=text size="4"><button onClick="modis(getnVal('Val14'), getnVal('Mod1'), 'Log1');">&nbsp;</button> |
+Modulus: <input id="Mod1" value="3000" size="5"> |
+Value: <input id="Val1" value="197" type=text size="3"><button onClick="modInverse(getnVal('Val1'), getnVal('Mod1'));">Calc</button> |
+Value: <input id="Val11" value="211" type=text size="3"><button onClick="modInverse(getnVal('Val11'), getnVal('Mod1'));">Calc</button> |
+Value: <input id="Val12" value="221" type=text size="3"><button onClick="modInverse(getnVal('Val12'), getnVal('Mod1'));">Calc</button> |
+Value: <input id="Val13" value="2113" type=text size="3"><button onClick="modInverse(getnVal('Val13'), getnVal('Mod1'));">Calc</button> |
 </div>
 <div>
-<button onClick="putLog('Log2','');">Clear</button> |
-Modulus (m): <input id="Mod2" value="3000" size="8"> | Val (d):
-<input id="Val2" value="11"    type=text size="4"><button onClick="modis(getnVal('Val2'),  getnVal('Mod2'), 'Log2');">&nbsp;</button> |
-<input id="Val21" value="211"  type=text size="4"><button onClick="modis(getnVal('Val21'), getnVal('Mod2'), 'Log2');">&nbsp;</button> |
-<input id="Val22" value="2111" type=text size="4"><button onClick="modis(getnVal('Val22'), getnVal('Mod2'), 'Log2');">&nbsp;</button> |
-<input id="Val23" value="941"  type=text size="4"><button onClick="modis(getnVal('Val23'), getnVal('Mod2'), 'Log2');">&nbsp;</button> |
-<input id="Val24" value="471"  type=text size="4"><button onClick="modis(getnVal('Val24'), getnVal('Mod2'), 'Log2');">&nbsp;</button> |
-</div>
-<div>
-<button onClick="putLog('Log3','');">Clear</button> |
-Modulus (m): <input id="Mod3" value="142514944" size="8"> | Val (d):
-<input id="Val3"  value="19699"  type=text size="4"><button onClick="modis(getnVal('Val3'),  getnVal('Mod3'), 'Log3');">&nbsp;</button> |
-<input id="Val31" value="213"    type=text size="4"><button onClick="modis(getnVal('Val31'), getnVal('Mod3'), 'Log3');">&nbsp;</button> |
-<input id="Val32" value="221"    type=text size="4"><button onClick="modis(getnVal('Val32'), getnVal('Mod3'), 'Log3');">&nbsp;</button> |
-<input id="Val33" value="2211"   type=text size="4"><button onClick="modis(getnVal('Val33'), getnVal('Mod3'), 'Log3');">&nbsp;</button> |
-<input id="Val34" value="21113"  type=text size="4"><button onClick="modis(getnVal('Val34'), getnVal('Mod3'), 'Log3');">&nbsp;</button> |
-</div>
-<!-- div>
-<button onClick="putLog('Log5','');">Clear</button> |
-Modulus: <input id="Mod5" value="1073479680" size="8"> | Val (d):
-<input id="Val5" value="1971213" type=text size="4"><button onClick="modis(getnVal('Val5'),  getnVal('Mod5'), 'Log5');">&nbsp;</button> |
-<input id="Val51" value="213"    type=text size="4"><button onClick="modis(getnVal('Val51'), getnVal('Mod5'), 'Log5');">&nbsp;</button> |
-<input id="Val52" value="221"    type=text size="4"><button onClick="modis(getnVal('Val52'), getnVal('Mod5'), 'Log5');">&nbsp;</button> |
-<input id="Val53" value="2211"   type=text size="4"><button onClick="modis(getnVal('Val53'), getnVal('Mod5'), 'Log5');">&nbsp;</button> |
-<input id="Val54" value="21113"  type=text size="4"><button onClick="modis(getnVal('Val54'), getnVal('Mod5'), 'Log5');">&nbsp;</button> |
-</div -->
-<hr>
-
-<div>
-Prime1: <input id="pr71"  value="47293" size="4"><button class="bt2" onClick="pickA1('Log7', 'pr71', 'prime1');">&nbsp;</button>
-Prime2: <input id="pr72"  value="60139" size="4"><button class="bt2" onClick="pickA1('Log7', 'pr72', 'prime2');">&nbsp;</button>
-Key1:   <input id="key71" value="22573" size="4"><button class="bt2" onClick="pickA1('Log7', 'key71', 'key1');">&nbsp;</button>|
-<button onClick="getk27('Log7', getnVal('pr71'), getnVal('pr72'), getnVal('key71'));">make</button> |
-width (bits):
-<select id="bitSel">
-<option>6</option>
-<option>7</option>
-<option selected=selected>8</option>
-<option>9</option>
-<option>10</option>
-<option>11</option>
-<option>12</option>
-<option>13</option>
-<option>14</option>
-<option>15</option>
-<option>16</option>
-</select>
-Key1: <input id="genKey1" value="-" size="4">
-<input id="ickValid" type="checkbox" checked>validOnly |
-<button onClick="genSel('bitSel', 'genKey1', 'ickValid', 'Log7');">genr</button>
-<br>
-<span id="Log7">[data]</span><br>
-</div>
-<p>
-<div>
-base: <input id="Base6" value="65" size="8">
-exp: <input id="Exp6" value="22573" size="8">
-<button onClick="pickA2('Log7', 'Mod6', 'pq', 'Exp6', 'key1');">k1</button>
-<button onClick="pickA2('Log7', 'Mod6', 'pq', 'Exp6', 'key2');">k2</button>
-mod: <input id="Mod6" value="2844153727" size="8"> |
-<button onClick="modex(getnVal('Base6'), getnVal('Exp6'), getnVal('Mod6'), 'Log6');">Calc</button> |
-<!-- button onClick="modex2(getnVal('Base6'), getnVal('Exp6'), getnVal('Mod6'), 'Log6');">Calc2</button --> |
-<span id="Log6"></span>
+Modulus: <input id="Mod2" value="3000" size="5"> |
+Value: <input id="Val2" value="121" type=text size="3"><button onClick="modInverse(getnVal('Val2'), getnVal('Mod2'));">Calc</button> |
+Value: <input id="Val21" value="127" type=text size="3"><button onClick="modInverse(getnVal('Val21'), getnVal('Mod2'));">Calc</button> |
+Value: <input id="Val22" value="417" type=text size="3"><button onClick="modInverse(getnVal('Val22'), getnVal('Mod2'));">Calc</button> |
+Value: <input id="Val23" value="471" type=text size="3"><button onClick="modInverse(getnVal('Val23'), getnVal('Mod2'));">Calc</button> |
 </div>
 <hr>
-<div>
-<!-- Plain: -->
-<textarea id="Str088" rows=2 cols=30>
-01234567891-------1
-</textarea>
-<button onClick="doEncTest('Str088', 'Enc088');">enc-&gt;</button> |
-<button onClick="doDecTest('Str088', 'Enc088');">&lt;-dec;</button> |
-<!-- Encrypted: -->
-<textarea id="Enc088" rows=2 cols=40>encrypted string</textarea>
-</div>
-<hr>
-<div id="Log1"></div>
-<hr size=0>
-<div id="Log2"></div>
-<hr size=0>
-<div id="Log3"></div>
-<hr size=0>
-<div id="Log4"></div>
-<hr size=0>
-<div id="Log5"></div>
-<hr size=0>
-<script>
-//function d2x(n) { return n < 16 ? '0' + n.toString(16) : n.toString(16); }
-function d2x(n) { return '0'.substr(0, n < 16) + n.toString(16); }
-</script>
-<button onClick="printPrimes('Log99');">Primes</button>
-<button onClick="putLog('Log99','');">Clear</button><br>
-<span id="Log99"></span>
+<div id="log"></div>
 </body>
+
+
