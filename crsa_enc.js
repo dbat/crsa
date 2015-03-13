@@ -16,14 +16,14 @@ function encrypt(key1, mod, str) {
   var S = [];
   for (var i = str.length - 1; i >= 0; i--) S.push(str[i]);
   //return _encrypt24(key1, mod, S.join(''));
-  //return _encrypt28(key1, mod, S.join(''));
-  return _encrypt30(key1, mod, S.join(''));
+  return _encrypt28(key1, mod, S.join(''));
+  //return _encrypt30(key1, mod, S.join(''));
 }
 
 function decrypt(key2, mod, str) {
   //var d = _decrypt24(key2, mod, str);
-  //var d = _decrypt28(key2, mod, str);
-  var d = _decrypt30(key2, mod, str);
+  var d = _decrypt28(key2, mod, str);
+  //var d = _decrypt30(key2, mod, str);
   //return d; // normal (forward)
 
   var S = [];
