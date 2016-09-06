@@ -22,7 +22,7 @@ Update: 2015.01.01
 Quick hints:
   1. Pick any two prime numbers: p and q
   2. Get modulus by multplying those primes: M = p * q
-  3. Get totient by multplying those primes: T = (p-1) * (q-1)
+  3. Get quotient by multplying those primes: T = (p-1) * (q-1)
   4. Pick any private/public key:  key1
   5. Compute public/private key with modular inverse against T: key2
   6. Done.
